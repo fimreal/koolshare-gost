@@ -1,0 +1,21 @@
+api:
+  addr: :18080
+  # pathPrefix: /api
+  accesslog: false
+  auther: auther-0
+authers:
+- name: auther-0
+  auths:
+  - username: user
+    password: pass
+log:
+  level: info
+  format: json
+  # output: stderr
+  output: none
+  rotation:
+    maxSize: 100
+    maxAge: 10
+    maxBackups: 3
+    localTime: false
+    compress: false
