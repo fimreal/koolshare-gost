@@ -3,7 +3,7 @@
 # build script for rogsoft project
 
 MODULE="gost"
-VERSION="0.1"
+VERSION="0.2"
 TITLE="gost"
 DESCRIPTION="gost"
 HOME_URL="Module_gost.asp"
@@ -33,8 +33,8 @@ assest_url=$(
 echo download: ${assest_url}
 
 # use proxy
-# curl -L https://cfdown.2fw.top/${assest_url} -o gostbin.tgz
-curl -L ${assest_url} -o gostbin.tgz
+curl -L https://cfdown.2fw.top/${assest_url} -o gostbin.tgz
+# curl -L ${assest_url} -o gostbin.tgz
 
 tar xf gostbin.tgz -C gost/bin/ gost
 
