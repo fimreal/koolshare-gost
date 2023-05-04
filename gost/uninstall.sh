@@ -7,4 +7,5 @@ rm /koolshare/scripts/gost* >/dev/null 2>&1
 rm /koolshare/scripts/uninstall_gost.sh >/dev/null 2>&1
 rm /koolshare/webs/Module_gost.asp >/dev/null 2>&1
 rm /koolshare/configs/${module}.yaml >/dev/null 2>&1
+rm /koolshare/bin/gost* >/dev/null 2>&1
 rm -rf /koolshare/init.d/*gost.sh >/dev/null 2>&1

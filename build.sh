@@ -14,6 +14,9 @@ ARCH=linux_armv7    # AC86U
 # Check and include base
 DIR="$( cd "$( dirname "$BASH_SOURCE[0]" )" && pwd )"
 
+# clean old package
+. $DIR/clean.sh
+
 # now include build_base.sh
 . $DIR/../softcenter/build_base.sh
 
@@ -30,7 +33,7 @@ assest_url=$(
 echo download: ${assest_url}
 
 # use proxy
-# curl -L https://cfdown.2fw.top/${assest_url} -o gost.tgz
+# curl -L https://cfdown.2fw.top/${assest_url} -o gostbin.tgz
 curl -L ${assest_url} -o gostbin.tgz
 
 tar xf gostbin.tgz -C gost/bin/ gost
