@@ -26,8 +26,8 @@
     <script type="text/javascript" src="/res/softcenter.js"></script>
     <script type="text/javascript">
         var db_gost_ = {};
-        var params_input = ["gost_run_status", "gost_config_content"];
-        var params_check = ["gost_enable"];
+        var params_input = ["gost_run_status", "gost_config_content", "gost_redport"];
+        var params_check = ["gost_enable", "gost_red_enable"];
 
 
         function get_dbus_data() {
@@ -254,11 +254,26 @@
                                         </table>
                                         <table style="margin:10px 0px 0px 0px;" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="gost_detail_table">
                                             <thead>
-                                                <tr>
-                                                    <td colspan="2">配置文件设置</td>
-                                                </tr>
                                             </thead>
-
+                                            <tr>
+                                                <th style="width: 28%;color: white;">开启 ipset 转发(需要配置为 12345 端口)</th>
+                                                <td>
+                                                    <div class="switch_field" style="display:table-cell;float: left;">
+                                                        <label for="gost_red_enable">
+                                                                <input id="gost_red_enable" class="switch" type="checkbox" style="display: none;">
+                                                                <div class="switch_container">
+                                                                    <div class="switch_bar"></div>
+                                                                    <div class="switch_circle transition_style">
+                                                                        <div></div>
+                                                                    </div>
+                                                                </div>
+                                                            </label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2">配置文件设置</td>
+                                            </tr>
                                             <tr>
                                                 <td colspan="2">
                                                     <textarea id="gost_config_content" rows="20" class="input_text" style="width: 98%; background: #3b4c50; color: white"></textarea>

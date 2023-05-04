@@ -42,72 +42,69 @@ set_config_file() {
 }
 
 # 配置iptables规则
-iptables_add() {
-    if [ "$transparent" = "off" ]; then
+iptables_add_red() {
+    if [ "$gost_red_enable" = "off" ]; then
         echo_date "透明代理模式已关闭! 不需要添加 iptables 转发规则!"
         return 0
     fi
-    if iptables -t mangle -S ${app_name} >/dev/null 2>&1; then
+    if iptables -t nat -S ${app_name} >/dev/null 2>&1; then
         echo_date "已经配置过 ${app_name} 的iptables规则!"
         return 0
     fi
 
+    # 路由器IP地址
+    lan_ipaddr="$(nvram get lan_ipaddr)"
+
     echo_date "开始配置 ${app_name} iptables规则..."
 
-    # 添加 mark
-    ip rule add fwmark 1 lookup 100
-    ip route add local 0.0.0.0/0 dev lo table 100
+    # 创建 ipset 规则
+    ipset create ${app_name} hash:ip >/dev/null 2>&1
 
-    iptables -t mangle -N ${app_name}_divert
-    iptables -t mangle -A ${app_name}_divert -j MARK --set-mark 1
-    iptables -t mangle -A ${app_name}_divert -j ACCEPT
-    iptables -t mangle -A PREROUTING -p tcp -m socket -j ${app_name}_divert
+    # 创建新表
+    iptables -t nat -N ${app_name}
+    iptables -t nat -F ${app_name}
+    iptables -t nat -A PREROUTING -p tcp -s ${lan_ipaddr}/24 -j ${app_name}
 
-    iptables -t mangle -N ${app_name}
-    iptables -t mangle -A ${app_name} -p tcp -d 10.0.0.0/8 -j RETURN
-    iptables -t mangle -A ${app_name} -p tcp -d 127.0.0.0/8 -j RETURN
-    iptables -t mangle -A ${app_name} -p tcp -d 192.168.0.0/16 -j RETURN
-    iptables -t mangle -A ${app_name} -p tcp -d 172.16.0.0/12 -j RETURN
-    iptables -t mangle -A ${app_name} -p tcp -d 169.254.0.0/16 -j RETURN
-    iptables -t mangle -A ${app_name} -p tcp -m mark --mark 100 -j RETURN
-    iptables -t mangle -A ${app_name} -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-ip 127.0.0.1 --on-port 54321
-    iptables -t mangle -A PREROUTING -p tcp -j ${app_name}
+    # 内部地址请求不转发
+    iptables -t nat -A ${app_name} -d 10.0.0.0/8 -j RETURN
+    iptables -t nat -A ${app_name} -d 127.0.0.0/8 -j RETURN
+    iptables -t nat -A ${app_name} -d 169.254.0.0/16 -j RETURN
+    iptables -t nat -A ${app_name} -d 172.16.0.0/12 -j RETURN
+    iptables -t nat -A ${app_name} -d ${lan_ipaddr}/24 -j RETURN
 
-    # 本地地址请求不转发
-    iptables -t mangle -N ${app_name}_local
-    iptables -t mangle -A ${app_name}_local -p tcp -d 10.0.0.0/8 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -d 127.0.0.0/8 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -d 255.255.255.255/32 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -d 192.168.0.0/16 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -d 172.16.0.0/12 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -d 169.254.0.0/16 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -m mark --mark 100 -j RETURN
-    iptables -t mangle -A ${app_name}_local -p tcp -j MARK --set-mark 1
-    iptables -t mangle -A OUTPUT -p tcp -j ${app_name}_local
+    # 按照 ipset 规则转发到 gost
+    iptables -t nat -A ${app_name} -s ${lan_ipaddr}/24 -p tcp -m set --match-set ${app_name} dst -j REDIRECT --to-ports ${gost_redport:-12345}
 
 }
 
 # 清理iptables规则
-iptables_add() {
+iptables_del_red() {
     if ! iptables -t nat -S ${app_name} >/dev/null 2>&1; then
         echo_date "已经清理过 ${app_name} 的iptables规则!"
         return 0
     fi
-    echo_date "开始清理 ${app_name} iptables规则 ..."
+    # 路由器IP地址
+    lan_ipaddr="$(nvram get lan_ipaddr)"
 
-    #
-    ip rule del fwmark 1 lookup 100
-    ip route del local 0.0.0.0/0 dev lo table 100
+    echo_date "开始清理 ${app_name} iptables 转发规则 ..."
 
+    # 删除 iptables 规则
+    iptables -t nat -D PREROUTING -p tcp -s ${lan_ipaddr}/24 -j ${app_name}
+    iptables -t nat -D ${app_name} -s ${lan_ipaddr}/24 -p tcp -m set --match-set ${app_name} dst -j REDIRECT --to-ports ${gost_redport:-12345}
     iptables -t nat -F ${app_name}
     iptables -t nat -X ${app_name}
 
-    iptables -t nat -F ${app_name}_local
-    iptables -t nat -X ${app_name}_local
+    # 同时删除 ipset 规则
+    # ipset flush ${app_name}
+    # ipset destroy ${app_name}
 }
 
 # 启动服务
 service_start() {
+    if pidof ${app_name} >/dev/null 2>&1; then
+        echo_date "${CMD} 已启动!"
+        return 1
+    fi
     nohup ${app_name} -C ${gost_config} >/dev/null 2>&1 &
     sleep 3
     if pidof ${app_name} >/dev/null 2>&1; then
@@ -120,6 +117,7 @@ service_start() {
         dbus set ${app_name}_run_status=""
         return 1
     fi
+    iptables_add_red
 }
 
 service_stop() {
@@ -138,6 +136,7 @@ service_stop() {
         dbus set ${app_name}_enable="0"
         dbus set ${app_name}_run_status=""
     fi
+    iptables_del_red
 }
 
 usage() {
@@ -173,10 +172,6 @@ get_config_file)
     # 获取配置文件内容（base64）
     get_config_file
     ;;
-# update )
-#     # 更新执行文件
-#     update_gost
-#     ;;
 restart)
     # 重启
     service_stop
@@ -190,6 +185,7 @@ case $2 in
     if [ "${gost_enable}" == "1" ]; then
         [ ! -L "/koolshare/init.d/S99gost.sh" ] && ln -sf /koolshare/scripts/gost_config.sh /koolshare/init.d/S99gost.sh
         set_config_file
+        service_start
     else
         service_stop
     fi

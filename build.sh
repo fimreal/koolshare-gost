@@ -3,7 +3,7 @@
 # build script for rogsoft project
 
 MODULE="gost"
-VERSION="0.1"
+VERSION="0.2"
 TITLE="gost"
 DESCRIPTION="gost"
 HOME_URL="Module_gost.asp"

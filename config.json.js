@@ -1,6 +1,6 @@
 {
-"version":"0.1",
-"md5":"8c74f035b533bea0efc37b90997e0288",
+"version":"0.2",
+"md5":"2c93c7a45d3a31d725f745360e015a60",
 "home_url":"Module_gost.asp",
 "title":"gost",
 "description":"gost",
@@ -8,5 +8,5 @@
 "author":"fimreal",
 "link":"",
 "changelog":"",
-"build_date":"2023-05-04_09:27:37"
+"build_date":"2023-05-04_14:31:32"
 }
