@@ -127,6 +127,7 @@ service_stop() {
         echo_date "开始停止 ${app_name} ..."
         killall ${app_name}
     fi
+    sleep 3
     # del_iptables 2>/dev/null
     if pidof ${app_name} >/dev/null 2>&1; then
         echo_date "${CMD} 停止失败!"
@@ -176,6 +177,9 @@ restart)
     # 重启
     service_stop
     service_start
+    ;;
+*)
+    usage
     ;;
 esac
 
